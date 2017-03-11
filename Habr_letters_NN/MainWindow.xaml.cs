@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Win32;
 using Image = System.Drawing.Image;
 
 namespace Habr_letters_NN
@@ -11,66 +14,26 @@ namespace Habr_letters_NN
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string basePath = @"C:\Users\ALEX\Documents\visual studio 2017\Projects\Habr_letters_NN\Habr_letters_NN";
+        private readonly string basePath = @"C:\Users\ALEX\Documents\visual studio 2017\Projects\Habr_letters_NN\Habr_letters_NN\\Resources";
 
         List<Neuron> _lettersNeurons = new List<Neuron>();
         public MainWindow()
         {
             InitializeComponent();
-            InitNn();
+            Task.Run(() => InitNn());
         }
 
         private void InitNn()
         {
             for (var c = 'A'; c <= 'Z'; c++)
-            {
-                var neuron = new Neuron
-                {
-                    Name = c.ToString(),
-                    Memory = new int[30, 30]
-                };
+                StudyValue.Dispatcher.Invoke(()=> StudyValue.Items.Add(c));
 
-                var image = new Bitmap(Image.FromFile( $"{basePath}\\Resources\\{c}.bmp"));
-
-                for (var i = 0; i < 29; i++)
-                {
-                    for (var j = 0; j < 29; j++)
-                    {
-                        int middle = (image.GetPixel(i, j).R + image.GetPixel(i, j).G + image.GetPixel(i, j).B) / 3;
-                        neuron.Memory[i, j] = middle;
-                    }
-                }
-
-                _lettersNeurons.Add(neuron);
-            }
+            NeuroLogic.InitNn(basePath, _lettersNeurons);
         }
 
         private void Study()
         {
-            var letter = StudyValue.Text.ToUpper();  
-            var image = new Bitmap(Image.FromFile($"{basePath}\\Resources\\Study\\{StudyPath.Text}.bmp"));
-
-            var letterNeuron = _lettersNeurons.Single(x => x.Name.ToUpper().Equals(letter));
-
-            letterNeuron.Input = new int[30,30];
-
-            for (int i = 0; i < 29; i++)
-            {
-                for (int j = 0; j < 29; j++)
-                {
-                    int middle = (image.GetPixel(i, j).R + image.GetPixel(i, j).G + image.GetPixel(i, j).B) / 3;
-                    letterNeuron.Input[i, j] = middle;
-
-                    var n = letterNeuron.Memory[i, j];
-                    var m = letterNeuron.Input[i, j];
-
-                    letterNeuron.Memory[i, j] = n + (n + m) / 2;
-                }
-            }
-
-            image.Save($"{basePath}\\Resources\\{letter}.bmp");
-
-
+            NeuroLogic.Study(basePath, StudyValue.Text.ToUpper(), StudyPath.Text, _lettersNeurons);
         }
 
         private void GetResult()
@@ -81,6 +44,25 @@ namespace Habr_letters_NN
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Study();
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
+                StudyPath.Text = openFileDialog.FileName;
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
+                ReconitionFile.Text = openFileDialog.FileName;
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            GetResult();
         }
     }
 }
