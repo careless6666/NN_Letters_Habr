@@ -18,5 +18,9 @@
         /// Тут он будет хранить опыт о предыдущем опыте
         /// </summary>
         public int[,] Memory { get; set; }
+        /// <summary>
+        /// Neuron weight
+        /// </summary>
+        public int Weight { get; set; }
     }
 }

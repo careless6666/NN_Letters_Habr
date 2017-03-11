@@ -38,7 +38,8 @@ namespace Habr_letters_NN
 
         private void GetResult()
         {
-            
+            var result = NeuroLogic.GetResult(ReconitionFile.Text, _lettersNeurons);
+            MessageBox.Show(result);
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
