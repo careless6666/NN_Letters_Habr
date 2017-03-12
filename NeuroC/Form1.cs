@@ -73,10 +73,10 @@ namespace WindowsFormsApplication1
                     transponMatrix[i, j] = _nw1.Weight[j, i];
             
 
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < 5; i++)
             {
                 listBox1.Items.Add("");
-                for (var j = 0; j < 5; j++)
+                for (var j = 0; j < 3; j++)
                     listBox1.Items[i] += " " + transponMatrix[i, j];
             }
             

@@ -6,6 +6,7 @@
         /// Digit value
         /// </summary>
         public int Digit { get; set; }
+        public int Treshhold { get; set; }
         /// <summary>
         /// Digit weights array
         /// </summary>
