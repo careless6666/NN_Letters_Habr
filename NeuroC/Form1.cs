@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace WindowsFormsApplication1
 {
@@ -17,9 +13,14 @@ namespace WindowsFormsApplication1
             InitializeComponent();
         }
 
-        public int[,] input = new int[3, 5];
-        Web NW1;
+        private int[,] input = new int[3, 5];
+        Web _nw1;
 
+        /// <summary>
+        /// Open click
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
             listBox1.Items.Clear();
@@ -27,169 +28,99 @@ namespace WindowsFormsApplication1
             openFileDialog1.Title = "Укажите тестируемый файл";
             openFileDialog1.ShowDialog();
             pictureBox1.Image = Image.FromFile(openFileDialog1.FileName);
-            Bitmap im = pictureBox1.Image as Bitmap;
+            var im = pictureBox1.Image as Bitmap;
             for (var i = 0; i <= 5; i++) listBox1.Items.Add(" ");
 
             for (var x = 0; x <= 2; x++)
             {
                 for (var y = 0; y <= 4; y++)
                 {
-                    // listBox1.Items.Add(Convert.ToString(im.GetPixel(x, y).R));
                     int n = (im.GetPixel(x, y).R);
-                    if (n >= 250) n = 0;
-                    else n = 1;
-                    listBox1.Items[y] = listBox1.Items[y] + "  " + Convert.ToString(n);
+                    n = n >= 250 ? 0 : 1;
+                    listBox1.Items[y] += n.ToString();
                     input[x, y] = n;
-                    //if (n == 0) input[x, y] = 1;
                 }
-
             }
 
-            recognize();
+            Recognize();
         }
 
-        public void recognize()
+        public void Recognize()
         {
-            NW1.mul_w();
-            NW1.Sum();
-            if (NW1.Rez()) listBox1.Items.Add(" - True, Sum = "+Convert.ToString(NW1.sum));
-            else listBox1.Items.Add( " - False, Sum = "+Convert.ToString(NW1.sum));
+            _nw1.MulW();
+            _nw1.Sum();
+            listBox1.Items.Add(_nw1.Rez() 
+                ? $" - True, Sum = {_nw1.sum}" 
+                : $" - False, Sum = {_nw1.sum}");
         }
-
-        class Web
-        {
-            public int[,] mul;
-            public int[,] weight;
-            public int[,] input;
-            public int limit = 9;
-            public int sum ;
-
-            public Web(int sizex, int sizey,int[,] inP)
-            {
-                weight = new int[sizex, sizey];
-                mul = new int[sizex, sizey];
-
-                input = new int[sizex, sizey];
-                input = inP;
-            }
-
-            public void mul_w()
-            {
-                for (int x = 0; x <= 2; x++)
-                {
-                    for (int y = 0; y <= 4; y++)
-                    {
-                        mul[x, y] = input[x,y]*weight[x,y];
-                    }
-                }
-            }
-
-            public void Sum()
-            {
-                sum = 0;
-                for (int x = 0; x <= 2; x++)
-                {
-                    for (int y = 0; y <= 4; y++)
-                    {
-                        sum += mul[x, y];
-                    }
-                }
-            }
-
-            public bool Rez()
-            {
-                if (sum >= limit)
-                    return true;
-                else return false;
-            }
-            public void incW(int[,] inP)
-            {
-                for (int x = 0; x <= 2; x++)
-                {
-                    for (int y = 0; y <= 4; y++)
-                    {
-                        weight[x, y] += inP[x, y];
-                    }
-                }
-            }
-            public void decW(int[,] inP)
-            {
-                for (int x = 0; x <= 2; x++)
-                {
-                    for (int y = 0; y <= 4; y++)
-                    {
-                        weight[x, y] -= inP[x, y];
-                    }
-                }
-            }
-
-        }
-
-
 
         private void Form1_Load(object sender, EventArgs e)
         {
-           
-
-            NW1 = new Web(3, 5,input);
+            _nw1 = new Web(3, 5, input);
 
             openFileDialog1.Title = "Укажите файл весов";
             openFileDialog1.ShowDialog();
-            string s = openFileDialog1.FileName;
-            StreamReader sr = File.OpenText(s);
-            string line;
-            string[] s1;
-            int k = 0;
-            while ((line = sr.ReadLine()) != null)
+            var s = openFileDialog1.FileName;
+            var sr = File.ReadAllText(s);
+
+            var model = JsonConvert.DeserializeObject<DigitModel>(sr);
+
+            _nw1.Weight = model.Weights;
+            var transponMatrix = new int[5, 3];
+
+            for (var i = 0; i < 5; i++)
+                for (var j = 0; j < 3; j++)
+                    transponMatrix[i, j] = _nw1.Weight[j, i];
+            
+
+            for (var i = 0; i < 3; i++)
             {
-               
-                s1 = line.Split(' ');
-                for (int i = 0; i < s1.Length; i++)
-                {
-                    listBox1.Items.Add("");
-                    if (k < 5)
-                    {
-                        NW1.weight[i, k] = Convert.ToInt32(s1[i]);
-                        listBox1.Items[k] += Convert.ToString(NW1.weight[i, k]);
-                    }
-
-                }
-                k++;
-
+                listBox1.Items.Add("");
+                for (var j = 0; j < 5; j++)
+                    listBox1.Items[i] += " " + transponMatrix[i, j];
             }
-            sr.Close();
+            
         }
 
+        /// <summary>
+        /// Not right click
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void button2_Click(object sender, EventArgs e)
         {
             button2.Enabled = false;
 
-                if (NW1.Rez() == false)
-                    NW1.incW(input);
-                else NW1.decW(input);
-               
-                //Запись
-                  string s="";
-                  string[] s1 = new string[5];
-                  System.IO.File.Delete("w.txt");
-                  FileStream FS = new FileStream("w.txt", FileMode.OpenOrCreate);
-                  StreamWriter SW = new StreamWriter(FS);
+            if (_nw1.Rez() == false)
+                _nw1.IncW(input);
+            else
+                _nw1.DecW(input);
 
-                for (int y = 0; y <= 4; y++)
-                {
+            //Запись
+            //var s1 = new string[5];
+            // File.Delete("w.txt");
 
-                    s = Convert.ToString(NW1.weight[0, y]) + " " + Convert.ToString(NW1.weight[1, y]) + " " + Convert.ToString(NW1.weight[2, y]) ;
-                        
+            File.Delete("w.json");
+            var model = new DigitModel
+            {
+                Digit = 5,
+                Weights = _nw1.Weight
+            };
 
-                    s1[y] = s;
-                   
-                    SW.WriteLine(s);
+            File.Create("w.json");
+            File.WriteAllText("w.json", JsonConvert.SerializeObject(model));
 
-                }
-                SW.Close();
+            //var fs = new FileStream("w.txt", FileMode.OpenOrCreate);
+            //var sw = new StreamWriter(fs);
 
+            //for (var y = 0; y <= 4; y++)
+            //{
+            //    var s = $"{_nw1.Weight[0, y]} {_nw1.Weight[1, y]} {_nw1.Weight[2, y]}";
+            //    s1[y] = s;
+            //    sw.WriteLine(s);
 
-            
+            //}
+            //sw.Close();
         }
     }
 
